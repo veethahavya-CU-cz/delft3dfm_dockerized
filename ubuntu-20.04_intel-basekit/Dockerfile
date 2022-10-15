@@ -1,6 +1,6 @@
 ## setting up the system
-# load the base image and update the system alternate - intel/oneapi-hpckit:devel-ubuntu20.04
-FROM intel/oneapi-basekit:devel-ubuntu20.04
+# load the base image and update the system
+FROM intel/oneapi-hpckit:devel-ubuntu20.04
 SHELL ["/bin/bash", "-c"]
 
 # update the system
@@ -59,4 +59,3 @@ RUN CC=icc CXX=icpc FC=ifort MPICXX=mpiicpc F77=ifort MPIF77=mpiifort MPIFC=mpii
 
 # create a scratch dir for model runs
 RUN mkdir /home/scratch
-SHELL ["/bin/bash", "-c"]
