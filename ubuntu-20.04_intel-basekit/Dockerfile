@@ -1,6 +1,6 @@
 ## setting up the system
-# load the base image and update the system
-FROM intel/oneapi-basekit:devel-ubuntu20.04   # alternate - intel/oneapi-hpckit:devel-ubuntu20.04
+# load the base image and update the system alternate - intel/oneapi-hpckit:devel-ubuntu20.04
+FROM intel/oneapi-basekit:devel-ubuntu20.04
 SHELL ["/bin/bash", "-c"]
 
 # update the system
