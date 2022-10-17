@@ -1,24 +1,24 @@
 ## setting up the system
 # load the base image and update the system
-FROM intel/oneapi-hpckit:devel-centos8
+FROM debian:latest
 SHELL ["/bin/bash", "-c"]
 
 # update the system
-RUN cd /etc/yum.repos.d/ && sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-RUN yum update -y
+RUN apt-get -y update && apt list --upgradable && apt-get -y upgrade
 
-# install dependencies from package manager - yum
-RUN yum install -y m4 zlib zlib-devel ruby libuuid uuid-devel libcurl-devel openssl openssl-libs expat expat-devel autoconf libtool-ltdl libtool-ltdl-devel bison bison-devel flex flex-devel environment-modules
+# install dependencies from package manager - apt
+RUN apt-get install -y build-essential m4 zlib1g zlib1g-dev ruby uuid uuid-dev curl libcurl4 libcurl4-openssl-dev expat libexpat1-dev autoconf libtool bison flex environment-modules wget nano subversion
+
+# install intel oneapi
+RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+RUN echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && apt update
+RUN apt install -y intel-hpckit
+
 
 
 ## setting up to compile and install dependencies
 RUN mkdir -p /home/delft3dfm_compile/dependencies
 WORKDIR /home/delft3dfm_compile/dependencies
-
-# remove any old cmake versions and install the target version
-RUN yum remove cmake -y
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-x86_64.sh
-RUN sh cmake-3.24.2-linux-x86_64.sh --prefix=/usr/local --skip-license
 
 # install hdf5-1.10.6 with parallel io support
 RUN wget github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_10_6.tar.gz && tar -xf hdf5-1_10_6.tar.gz
@@ -45,10 +45,12 @@ RUN source /opt/intel/oneapi/setvars.sh && make install
 RUN rm -rf /home/delft3dfm_compile/dependencies
 
 
-## pulling the delft3dfm source code from the svn repositry and compiling the source code
+## compiling delft3dfm
+# copy the zipped delft3dfm source code into the container
+COPY delft3dfm_source/delft3dfm_68819.tar.gz /home/delft3dfm_compile/delft3dfm_68819.tar.gz
 WORKDIR /home/delft3dfm_compile
-RUN svn checkout https://svn.oss.deltares.nl/repos/delft3d/tags/delft3dfm/68819/ delft3dfm_68819 --username veethahavya_0 --password delftFM420
-WORKDIR /root/dependencies/delft3dfm_68819/src/
+RUN tar -xf delft3dfm_68819.tar.gz && rm delft3dfm_68819.tar.gz
+WORKDIR /home/delft3dfm_compile/delft3dfm_68819/src/
 
 # copy missing files: fix for known issue
 RUN cp third_party_open/swan/src/*.[fF]* third_party_open/swan/swan_mpi && cp third_party_open/swan/src/*.[fF]* third_party_open/swan/swan_omp
@@ -61,6 +63,7 @@ RUN source /etc/profile.d/modules.sh && source /opt/intel/oneapi/setvars.sh && C
 RUN source /etc/profile.d/modules.sh && source /opt/intel/oneapi/setvars.sh && CC=icc CXX=icpc FC=ifort MPICXX=mpiicpc F77=ifort MPIF77=mpiifort MPIFC=mpiifort CPPFLAGS="-I/usr/local/include" CFLAGS="-m64 -diag-disable=10441" make ds-install -C engines_gpl/dflowfm
 
 
-# create a scratch dir for model runs
-RUN mkdir /home/scratch
-SHELL ["/bin/bash", "-c"]
+## delete source files and create a scratch dir for model runs
+WORKDIR /home
+RUN rm -rf delft3dfm_compile && mkdir scratch
+WORKDIR /home/scratch
