@@ -1,0 +1,6 @@
+1. follow the steps in ./preprocessing
+2. build the docker container by navigating into the root proj dir (./) via the command "docker build --network=host -t delft3dfm ."
+   note: you may replace delft3dfm with any other name desired for the docker image, but make sure to use the new name in subsequent steps
+3. run the docker container with the compiled delft3dfm program (located in /opt/delft3dfm inside the container) via the command "docker run -it --rm -v %cd%/scratch:/home/scratch"
+   note: above command is for running the container via MS-CMD; for MS-PS replace %cd% with ${PWD}; and for GNU-LINUX replace %cd% with $(pwd)
+   the flag --rm removes the container and its not mapped contents (not in ./scratch). either copy all desired files to this location or remove the flag before running it.
